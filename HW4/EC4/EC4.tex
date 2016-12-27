@@ -1,0 +1,201 @@
+\documentclass{article}
+\usepackage[margin=1in]{geometry}
+\usepackage{amsmath}
+\usepackage{amsfonts}
+\usepackage{amsthm}
+\newtheorem{claim}{Claim}
+\usepackage{algorithm}
+\usepackage[noend]{algpseudocode}
+\usepackage{mdframed}
+\usepackage{mathtools}
+\usepackage{tikz}
+\usepackage{graphicx}
+\usetikzlibrary{arrows}
+\usepackage{subcaption}
+\usepackage{enumerate}
+\DeclarePairedDelimiter\ceil{\lceil}{\rceil}
+\DeclarePairedDelimiter\floor{\lfloor}{\rfloor}
+\title{CS 330: Homework 4 Extra Credit}
+\author{Michael Lin}
+\begin{document}
+\maketitle
+\section*{Problem 1 Extra Credit}
+\begin{algorithm}[H]
+\caption{Functions for finding outer tangents}
+\begin{algorithmic}[1]
+\Function{Tangent}{polygon $P[1,\dots,n]$, polygon $Q[1,\dots,m]$}
+\State $i = 1, j = 1$
+\State $p = P[i], q = Q[j]$
+\State $a = \textsc{Helper}(p,q)$, $b = \textsc{Helper}(q,p)$
+
+\While{$a\neq(L,R) \text{ and } b\neq(R,L)$}
+	\If{$a = (L,L) \text{ or }  (R,L)$}
+		\State $j=j+1 \mod m$
+	\ElsIf{$a = (R,R), (R,C), \text{ or } (C,R)$}
+		\State $j=j-1 \mod m$
+	\EndIf
+
+	\If{$b = (R,R) \text{ or } (L,R)$}
+		\State $i=i+1 \mod n$
+	\ElsIf{$b = (L,L), (L,C), \text{ or } (C,L)$}
+		\State $i=i-1 \mod n$
+	\EndIf
+	\State $p = P[i], q = Q[j]$
+	\State $a = \textsc{Helper}(p,q)$, $b = \textsc{Helper}(q,p)$
+\EndWhile
+\State $T_1 = (p,q)$
+\\
+\State $i = 1, j = 1$
+\State $p = P[i], q = Q[j]$
+\State $a = \textsc{Helper}(p,q)$, $b = \textsc{Helper}(q,p)$
+
+\While{$a\neq(R,L) \text{ and } b\neq(L,R)$}
+	\If{$a = (R,R) \text{ or } (L,R)$}
+			\State $j=j+1 \mod n$
+		\ElsIf{$a = (L,L), (L,C), \text{ or } (C,L)$}
+			\State $j=j-1 \mod n$
+		\EndIf
+	
+	\If{$b = (L,L) \text{ or }  (R,L)$}
+		\State $i=i+1 \mod m$
+	\ElsIf{$b = (R,R), (R,C), \text{ or } (C,R)$}
+		\State $i=i-1 \mod m$
+	\EndIf
+
+	
+	\State $p = P[i], q = Q[j]$
+	\State $a = \textsc{Helper}(p,q)$, $b = \textsc{Helper}(q,p)$
+\EndWhile
+\State $T_2 = (p,q)$
+
+\\
+\State \Return $T_1, T_2$
+\EndFunction
+\end{algorithmic}
+\end{algorithm}
+
+
+\begin{algorithm}[H]
+\caption{Helper functions for above main function}
+\begin{algorithmic}[1]
+
+\Function{Helper}{point $q$, vertex $P[i]$}
+\State $a_i = \textsc{Direction}(q, P[i-1 \mod n], P[i \mod n])$
+\State $b_i = \textsc{Direction}(q, P[i \mod n], P[i+1 \mod n])$
+\State \Return $(a_i,b_i)$
+
+\EndFunction
+\\
+\Function{Direction}{$a,b,c$}
+\State $d = \det
+	\begin{pmatrix}
+	1 & a_x & a_y \\
+	1 & b_x & b_y \\
+	1 & c_x & c_y \\
+	\end{pmatrix}
+	$
+\If {$d>0$} \Return L \Comment L for left, R for right, C for collinear 
+\EndIf
+\If {$d<0$} \Return R \EndIf
+\If {$d=0$} \Return C \EndIf
+\EndFunction
+\end{algorithmic}
+\end{algorithm}
+
+\begin{proof}[Proof of correctness]
+The algorithm relies on the same principle as discussed for problem 1b. Starting at the left-most points $P[1],Q[1]$ and based on their direction with respect to each other, we make decisions to march along each polygon in a specified direction. In general, tangents are characterized by boundaries where direction between a point and the tangent changes either from left to right $(L,R)$ or from right to left $(R,L)$. In the case of tangents between two polygons, one outer tangent can be characterized as $(L,R)$ going from tangent point $P[T_1]$ to tangent point $Q[T_1]$ and $(R,L)$ going from tangent point $Q[T_1] $ to tangent point $P[T_1]$. The other outer tangent is just the opposite. In choosing the left-most points to begin the search, we will ensure that each polygon will, for the most part, march in the same direction (e.g. polygon $P$ marches clockwise, polygon $Q$ marches counterclockwise). Eventually, we will reach the desired outer tangent. The same argument is true to the find the other outer tangent.
+\end{proof}
+
+\begin{proof}[Proof of runtime]
+The algorithm for the most part will only march in the same direction until reaching the desired outer tangent. This ensures that each pair of points will be compared only once, and each point will always change unless it arrives at the outer tangent. Therefore, we have at most $O(n+m)$ pairs of points to check. Each pair of points takes a constant amount of time to check. Therefore, the algorithm runs in $O(n+m)$ time.
+\end{proof}
+
+\section*{Problem 3 Extra Credit}
+\begin{algorithm}[H]
+\caption{Algorithm to compute the set of maximal points of S}
+\begin{algorithmic}[1]
+\Function{Maximal}{set $S=\{p_1,\dots,p_n \}$}
+\State $X=$ sort $S$ by $x$ coordinate
+
+\State $S_x=\emptyset$
+	\Comment $S_x, S_y$ are stacks
+\For{$i$ in 1 to $n$}
+	\State \textsc{Push}$(X[i],S_x)$
+\EndFor
+
+\State $C_x=\emptyset$
+	\Comment $C_x$ is a set where each value appears only once
+
+	\State $x_a=\textsc{Pop}(S_x)$, $x_b=\textsc{Pop}(S_x)$
+	\While{$S_x\neq \emptyset$}
+		\If{$y(x_a)\geq y(x_b)$ and $z(x_a)\geq z(x_b)$} \Comment $y(\cdot),z(\cdot)$ are the $y,z$ coordinates of the point
+			\State $x_b=\textsc{Pop}(S_x)$
+		\Else
+			\State \textsc{Add}$(x_a, C_x)$
+			\State $x_a=\textsc{Pop}(S_x)$
+		\EndIf
+	\EndWhile
+	\State \textsc{Add}$(x_a, C_x)$
+	\If{$y(x_a)\leq y(x_b)$}
+		\State \textsc{Add}$(x_b, C_x)$
+	\EndIf
+	
+	
+\\
+\State $Y=$ sort $C_x$ by $y$ coordinate
+\State $S_y = \emptyset$
+\For{$i$ in 1 to $n$}
+	\State \textsc{Push}$(Y[i],S_y)$
+\EndFor
+\State $C_y=\emptyset$ \Comment $C_y$ is a set where each value appears only once
+	\State $y_a=\textsc{Pop}(S_y)$, $y_b=\textsc{Pop}(S_y)$
+	\While{$S_y\neq \emptyset$}
+		\If{$x(y_a) \geq x(y_b)$ and $z(y_a)\geq z(y_b)$} \Comment $x(\cdot),z(\cdot)$ are the $x,z$ coordinates of the point
+			\State $y_b=\textsc{Pop}(S_y)$
+		\Else
+			\State \textsc{Add}$(y_a, C_y)$
+			\State $y_a=\textsc{Pop}(S_y)$
+		\EndIf
+	\EndWhile
+	\State \textsc{Add}$(y_a, C_y)$
+	\If{$x(y_a)\leq x(y_b)$}
+		\State \textsc{Add}$(y_b, C_y)$
+	\EndIf
+
+\\
+\State $Z=$ sort $C_y$ by $z$ coordinate
+\State $S_z = \emptyset$
+\For{$i$ in 1 to $n$}
+	\State \textsc{Push}$(Z[i],S_z)$
+\EndFor
+\State $C_z=\emptyset$ \Comment $C_z$ is a set where each value appears only once
+	\State $z_a=\textsc{Pop}(S_z)$, $z_b=\textsc{Pop}(S_z)$
+	\While{$S_z\neq \emptyset$}
+		\If{$x(z_a)\geq x(z_b)$ and $y(z_a)\geq y(z_b)$} \Comment $x(\cdot), y(\cdot)$ are the $x,y$ coordinates of the point
+			\State $z_b=\textsc{Pop}(S_z)$
+		\Else
+			\State \textsc{Add}$(z_a, C_z)$
+			\State $z_a=\textsc{Pop}(S_z)$
+		\EndIf
+	\EndWhile
+	\State \textsc{Add}$(z_a, C_z)$
+	\If{$x(y_a)\leq x(y_b)$}
+		\State \textsc{Add}$(z_b, C_z)$
+	\EndIf
+\\
+\State \Return $C_z$
+
+
+
+\EndFunction
+\end{algorithmic}
+\end{algorithm}
+
+\begin{proof}[Proof of correctness]
+First, consider the points sorted by $x$ coordinates. In descending order, we check if one point dominates another point with smaller or the same $x$ coordinate. If so, the point with smaller or the same $x$ coordinate cannot be in the set of maximal points. If not, then both points may still be in the set of maximal points. Continuing in this manner until all points are exhausted will give all points where smaller $x$ coordinates corresponds to larger $y$ coordinates. We then consider remaining candidates $C_x$ sorted by $y$ coordinates. Finally, we consider remaining candiates $C_y$ sorted by $z$ coordinates. This takes into account the fact that some points may have either the same $x$, $y$, or $z$ coordinates. $C_z$ is a subset of the candidates $C_x$ as well as a subset of the candidates $C_y \subseteq C_x$, which will give the set of maximal points.
+\end{proof}
+
+\begin{proof}[Proof of runtime]
+Sorting the set $S$ in $x$, $y$, and $z$ coordinates each takes $O(n \log n)$ time. Adding sorted values into a stack takes $O(n)$ time. The while-loop (for $x$, $y$, and $z$) makes comparisons whether a point dominates another point. There are at most $O(n)$ comparisons, and each comparison takes a constant amount of time. Thus, the 2 while-loops take $O(n)$ time. Thus, the algorithm overall takes $O(n \log n)$ time.
+\end{proof}
+\end{document}
